@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Try Demo - InterviewPro AI</title>
+    <meta name="description" content="Experience InterviewPro AI's interview simulation with real-time AI feedback on your performance">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/animations.css">
+    
+    <style>
+        .demo-interface {
+            min-height: 100vh;
+            padding: 8rem 0 4rem;
+            background: var(--bg-color);
+        }
+        
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .demo-title {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+        
+        .webcam-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .webcam-placeholder {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px dashed var(--glass-border);
+        }
+        
+        .webcam-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .webcam-text {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        #demo-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .demo-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.active {
+            background: #10b981;
+        }
+        
+        .ai-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        
+        .ai-indicator {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .ai-indicator.top-left {
+            top: 1rem;
+            left: 1rem;
+        }
+        
+        .ai-indicator.top-right {
+            top: 1rem;
+            right: 1rem;
+        }
+        
+        .ai-indicator.bottom-left {
+            bottom: 1rem;
+            left: 1rem;
+        }
+        
+        .ai-indicator.bottom-right {
+            bottom: 1rem;
+            right: 1rem;
+        }
+        
+        .ai-feedback {
+            margin-top: 2rem;
+            padding: 2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .feedback-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+        }
+        
+        .metric-value {
+            font-weight: 600;
+        }
+        
+        .metric-value.good {
+            color: #10b981;
+        }
+        
+        .metric-value.warning {
+            color: #f59e0b;
+        }
+        
+        .metric-value.error {
+            color: #ef4444;
+        }
+        
+        .feedback-summary {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        #demo-error {
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+        
+        .demo-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        .demo-feature {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .demo-feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .demo-feature h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .demo-feature p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        @media (max-width: 768px) {
+            .demo-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <header class="header">
+        <nav class="nav">
+            <div class="nav-brand">
+                <h2>InterviewPro AI</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="about.html" class="nav-link">About</a></li>
+                <li><a href="demo.html" class="nav-link active">Demo</a></li>
+                <li><a href="contact.html" class="nav-link">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Demo Interface -->
+    <section class="demo-interface">
+        <div class="demo-container">
+            <div class="demo-header">
+                <h1 class="demo-title animate-fade-in">
+                    Experience <span class="gradient-text">AI-Powered</span> Interview Coaching
+                </h1>
+                <p class="demo-subtitle animate-fade-in delay-1">
+                    Get real-time feedback on your interview performance with our advanced AI analysis
+                </p>
+            </div>
+
+            <div class="webcam-container animate-fade-in delay-2">
+                <div class="status-indicator">
+                    <div class="status-dot" id="status-dot"></div>
+                    <span id="status-text">Camera Inactive</span>
+                </div>
+                
+                <div class="webcam-placeholder" id="webcam-placeholder">
+                    <div class="webcam-icon">📹</div>
+                    <div class="webcam-text">
+                        <strong>Ready to start your AI interview simulation?</strong><br>
+                        Click "Allow Camera Access" to begin your personalized coaching session
+                    </div>
+                    <video id="demo-video" autoplay muted playsinline></video>
+                </div>
+                
+                <div class="ai-overlay" id="ai-overlay" style="display: none;">
+                    <div class="ai-indicator top-left">Eye Contact: <span id="eye-contact-score">Analyzing...</span></div>
+                    <div class="ai-indicator top-right">Confidence: <span id="confidence-score">Analyzing...</span></div>
+                    <div class="ai-indicator bottom-left">Posture: <span id="posture-score">Analyzing...</span></div>
+                    <div class="ai-indicator bottom-right">Speaking: <span id="speaking-score">Analyzing...</span></div>
+                </div>
+                
+                <div class="demo-controls">
+                    <button id="allow-webcam" class="btn btn-primary btn-glow btn-large">
+                        Allow Camera Access
+                    </button>
+                    <button id="stop-demo" class="btn btn-secondary" style="display: none;">
+                        Stop Demo
+                    </button>
+                </div>
+                
+                <div id="demo-error"></div>
+            </div>
+
+            <div class="ai-feedback" id="ai-feedback">
+                <h3>AI Analysis Results</h3>
+                <div class="feedback-metrics">
+                    <div class="metric">
+                        <span class="metric-label">Eye Contact:</span>
+                        <span class="metric-value good" id="final-eye-contact">Excellent</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Confidence Level:</span>
+                        <span class="metric-value good" id="final-confidence">87%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Speaking Pace:</span>
+                        <span class="metric-value warning" id="final-speaking">Slightly Fast</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Posture:</span>
+                        <span class="metric-value good" id="final-posture">Professional</span>
+                    </div>
+                </div>
+                <p class="feedback-summary" id="feedback-summary">
+                    Great job! Your eye contact and posture are excellent. Try to slow down your speaking pace slightly for better clarity.
+                </p>
+            </div>
+
+            <div class="demo-features">
+                <div class="demo-feature animate-fade-in delay-3">
+                    <div class="demo-feature-icon">👁️</div>
+                    <h3>Real-Time Eye Tracking</h3>
+                    <p>Monitor your gaze patterns and get instant feedback on maintaining professional eye contact</p>
+                </div>
+                
+                <div class="demo-feature animate-fade-in delay-4">
+                    <div class="demo-feature-icon">😊</div>
+                    <h3>Facial Expression Analysis</h3>
+                    <p>AI analyzes your facial expressions to help you project confidence and engagement</p>
+                </div>
+                
+                <div class="demo-feature animate-fade-in delay-5">
+                    <div class="demo-feature-icon">🎤</div>
+                    <h3>Voice & Speech Coaching</h3>
+                    <p>Get feedback on speaking pace, clarity, and eliminate filler words from your responses</p>
+                </div>
+                
+                <div class="demo-feature animate-fade-in delay-6">
+                    <div class="demo-feature-icon">📊</div>
+                    <h3>Performance Analytics</h3>
+                    <p>Detailed metrics and insights to track your improvement over multiple practice sessions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3>InterviewPro AI</h3>
+                    <p>Master your interview skills with AI-powered feedback</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Product</h4>
+                        <ul>
+                            <li><a href="index.html#features">Features</a></li>
+                            <li><a href="index.html#pricing">Pricing</a></li>
+                            <li><a href="demo.html">Demo</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="about.html">About</a></li>
+                            <li><a href="contact.html">Contact</a></li>
+                            <li><a href="#">Privacy</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 InterviewPro AI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Enhanced demo-specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const allowWebcamBtn = document.getElementById('allow-webcam');
+            const stopDemoBtn = document.getElementById('stop-demo');
+            const demoVideo = document.getElementById('demo-video');
+            const demoError = document.getElementById('demo-error');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const aiOverlay = document.getElementById('ai-overlay');
+            const aiFeedback = document.getElementById('ai-feedback');
+            const webcamPlaceholder = document.getElementById('webcam-placeholder');
+            
+            let stream = null;
+            let analysisInterval = null;
+            
+            allowWebcamBtn.addEventListener('click', async function() {
+                try {
+                    this.textContent = 'Accessing camera...';
+                    this.disabled = true;
+                    demoError.style.display = 'none';
+                    
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            facingMode: 'user'
+                        },
+                        audio: true 
+                    });
+                    
+                    demoVideo.srcObject = stream;
+                    demoVideo.style.display = 'block';
+                    webcamPlaceholder.querySelector('.webcam-icon').style.display = 'none';
+                    webcamPlaceholder.querySelector('.webcam-text').style.display = 'none';
+                    
+                    // Update status
+                    statusDot.classList.add('active');
+                    statusText.textContent = 'Camera Active';
+                    
+                    // Show AI overlay
+                    aiOverlay.style.display = 'block';
+                    
+                    // Update button
+                    this.style.display = 'none';
+                    stopDemoBtn.style.display = 'inline-flex';
+                    
+                    // Start AI analysis simulation
+                    startAIAnalysis();
+                    
+                } catch (error) {
+                    console.error('Webcam access error:', error);
+                    
+                    let errorMessage = 'Camera access failed. ';
+                    
+                    if (error.name === 'NotAllowedError') {
+                        errorMessage += 'Please allow camera access in your browser settings and try again.';
+                    } else if (error.name === 'NotFoundError') {
+                        errorMessage += 'No camera found on this device.';
+                    } else if (error.name === 'NotReadableError') {
+                        errorMessage += 'Camera is being used by another application.';
+                    } else {
+                        errorMessage += 'Please try a compatible browser (Chrome, Firefox, Safari).';
+                    }
+                    
+                    demoError.textContent = errorMessage;
+                    demoError.style.display = 'block';
+                    
+                    this.textContent = 'Try Again';
+                    this.disabled = false;
+                }
+            });
+            
+            stopDemoBtn.addEventListener('click', function() {
+                stopDemo();
+            });
+            
+            function startAIAnalysis() {
+                let analysisStep = 0;
+                const analysisSteps = [
+                    { eye: 'Good', confidence: '75%', posture: 'Analyzing...', speaking: 'Listening...' },
+                    { eye: 'Excellent', confidence: '82%', posture: 'Good', speaking: 'Clear' },
+                    { eye: 'Very Good', confidence: '87%', posture: 'Professional', speaking: 'Optimal' },
+                    { eye: 'Excellent', confidence: '91%', posture: 'Excellent', speaking: 'Clear & Confident' }
+                ];
+                
+                analysisInterval = setInterval(() => {
+                    if (analysisStep < analysisSteps.length) {
+                        const step = analysisSteps[analysisStep];
+                        document.getElementById('eye-contact-score').textContent = step.eye;
+                        document.getElementById('confidence-score').textContent = step.confidence;
+                        document.getElementById('posture-score').textContent = step.posture;
+                        document.getElementById('speaking-score').textContent = step.speaking;
+                        analysisStep++;
+                    }
+                }, 2000);
+                
+                // Show final feedback after 10 seconds
+                setTimeout(() => {
+                    showFinalFeedback();
+                }, 10000);
+            }
+            
+            function showFinalFeedback() {
+                aiFeedback.style.display = 'block';
+                aiFeedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Animate the feedback appearance
+                aiFeedback.classList.add('animate-fade-in');
+            }
+            
+            function stopDemo() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                
+                if (analysisInterval) {
+                    clearInterval(analysisInterval);
+                    analysisInterval = null;
+                }
+                
+                // Reset UI
+                demoVideo.style.display = 'none';
+                demoVideo.srcObject = null;
+                webcamPlaceholder.querySelector('.webcam-icon').style.display = 'block';
+                webcamPlaceholder.querySelector('.webcam-text').style.display = 'block';
+                
+                statusDot.classList.remove('active');
+                statusText.textContent = 'Camera Inactive';
+                
+                aiOverlay.style.display = 'none';
+                aiFeedback.style.display = 'none';
+                
+                allowWebcamBtn.style.display = 'inline-flex';
+                allowWebcamBtn.textContent = 'Allow Camera Access';
+                allowWebcamBtn.disabled = false;
+                stopDemoBtn.style.display = 'none';
+                
+                demoError.style.display = 'none';
+            }
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', function() {
+                stopDemo();
+            });
+        });
+    </script>
+</body>
+</html>
